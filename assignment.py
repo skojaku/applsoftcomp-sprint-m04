@@ -588,31 +588,36 @@ def _(mo):
 
     **Example observation for the plot above:**
 
-    > The two axes cut the cities into four readable quadrants. Beijing,
-    > Rio de Janeiro, Shanghai, Paris, Seoul, and Tokyo anchor the
-    > *megacity* pole; tiny island capitals — Road Town, The Valley,
-    > Flying Fish Cove, Basse-Terre, St. Peter Port — anchor the
+    > **Quadrants.** The two axes cut the cities into four readable
+    > quadrants. Beijing, Rio de Janeiro, Shanghai, Paris, Seoul, and Tokyo
+    > anchor the *megacity* pole. Tiny island capitals — Road Town, The
+    > Valley, Flying Fish Cove, Basse-Terre, St. Peter Port — anchor the
     > *small-town* pole, and they mostly carry "High Sufficiency" or
     > "Sufficiency" GaWC ratings, a nice sanity check that the axis is
-    > tracking global-city-ness. The climate axis is held up by Oslo,
-    > Stockholm, Copenhagen, Moscow, and Kyiv on the cold side and Manila,
-    > Panama City, Singapore, Addis Ababa, and Dhaka on the tropical side.
-    > Recoloring by **|latitude|** makes a second, non-semantic signal
-    > visible: points at the top of the plot are uniformly light (near
-    > the equator), points at the bottom are uniformly dark (far from it),
-    > confirming the climate axis is really tracking distance-to-equator.
-    > Notable **surprises**: Hamilton (Bermuda, subtropical) lands in the
-    > "cold" half — almost certainly because the model is confusing it
-    > with Hamilton, Ontario; this is a live example of name-collision
-    > noise that bare-city embeddings are prone to. Kathmandu also lands
-    > cold, which is actually geographically plausible once you remember
-    > it sits at 1,400 m in the Himalayas. Doha and Abu Dhabi sit in the
+    > tracking global-city-ness.
+    >
+    > **Climate anchors.** Oslo, Stockholm, Copenhagen, Moscow, and Kyiv
+    > hold up the cold side; Manila, Panama City, Singapore, Addis Ababa,
+    > and Dhaka hold up the tropical side. Recoloring by **|latitude|**
+    > makes a second, non-semantic signal visible: points at the top of
+    > the plot are uniformly light (near the equator), points at the
+    > bottom are uniformly dark (far from it) — confirming the climate
+    > axis really is tracking distance-to-equator.
+    >
+    > **Surprises.** Hamilton (Bermuda, subtropical) lands in the "cold"
+    > half — almost certainly because the model is confusing it with
+    > Hamilton, Ontario. This is a live example of name-collision noise
+    > that bare-city embeddings are prone to. Kathmandu also lands cold,
+    > which is actually geographically plausible once you remember it
+    > sits at 1,400 m in the Himalayas. Doha and Abu Dhabi sit in the
     > *megacity + tropical* quadrant, consistent with how oil-era Gulf
-    > hubs are written about. What the axes **miss**: coastal-vs-inland
-    > geography, political capital status, and age of the city — Rome
-    > (2,700-year-old) and Washington, D.C. (200-year-old planned capital)
-    > end up in the same megacity column, just split by climate; the axes
-    > cannot see the 2,500-year age gap.
+    > hubs are written about.
+    >
+    > **What the axes miss.** Coastal-vs-inland geography, political
+    > capital status, and age of the city. Rome (2,700 years old) and
+    > Washington, D.C. (a 200-year-old planned capital) end up in the
+    > same megacity column, just split by climate — the axes cannot see
+    > the 2,500-year age gap between them.
 
     ---
 
