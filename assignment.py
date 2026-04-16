@@ -462,16 +462,20 @@ def _(mo):
       most instructive points.
 
     The dropdown below lets you **recolor the scatter** by a different
-    attribute. Same geometry, different story:
+    attribute. Same geometry, different story. The palette is chosen to
+    match the column's type — a rule worth internalizing:
 
-    - `region` — the continent each city sits in (categorical).
-    - `business_activity` — GaWC global-city rating, ordered from
-      *Alpha++* down to *Sufficiency* (ordinal).
-    - `population` — city population on a log scale (quantitative).
+    - `region` — **categorical** → Okabe–Ito qualitative palette.
+    - `business_activity` — **ordinal** GaWC rating (Alpha++ →
+      Sufficiency) → sequential **viridis**, sorted along the rating.
+    - `population` — **quantitative sequential** (log-spaced) →
+      sequential **viridis**.
+    - `latitude` — **quantitative diverging** around the equator →
+      **red–blue** diverging scale with zero at the midpoint.
 
     Swapping the color encoding is a cheap way to check whether your
     semantic axes are picking up something that *also* correlates with
-    a non-semantic attribute you already have in the data.
+    a non-semantic attribute already in the data.
     """)
     return
 
@@ -479,17 +483,21 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     color_by = mo.ui.dropdown(
-        options=["region", "business_activity", "population"],
-        value="region",
+        options={
+            "region (categorical)":         "region",
+            "business_activity (ordinal)":  "business_activity",
+            "population (sequential, log)": "population",
+            "latitude (diverging at 0°)":   "lat",
+        },
+        value="region (categorical)",
         label="Color by: ",
     )
-    color_by
     return (color_by,)
 
 
 @app.cell(hide_code=True)
-def _(alt, color_by, df_scored):
-    # Okabe–Ito palette, one color per region.
+def _(alt, color_by, df_scored, mo):
+    # Okabe–Ito palette — categorical, colorblind-safe.
     REGION_COLORS = {
         "Africa":   "#009E73",
         "Americas": "#0072B2",
@@ -507,6 +515,7 @@ def _(alt, color_by, df_scored):
     ]
 
     if color_by.value == "region":
+        # Categorical → qualitative palette.
         _color = alt.Color(
             "region:N",
             scale=alt.Scale(
@@ -516,17 +525,26 @@ def _(alt, color_by, df_scored):
             legend=alt.Legend(title="Region"),
         )
     elif color_by.value == "business_activity":
+        # Ordinal → sequential palette, sorted along the order.
         _color = alt.Color(
             "business_activity:O",
             sort=BUSINESS_ORDER,
             scale=alt.Scale(domain=BUSINESS_ORDER, scheme="viridis"),
             legend=alt.Legend(title="GaWC rating"),
         )
-    else:  # population
+    elif color_by.value == "population":
+        # Quantitative, heavy-tailed → log-scaled sequential palette.
         _color = alt.Color(
             "population:Q",
             scale=alt.Scale(scheme="viridis", type="log"),
             legend=alt.Legend(title="Population (log)"),
+        )
+    else:  # lat
+        # Signed quantitative with meaningful midpoint → diverging palette.
+        _color = alt.Color(
+            "lat:Q",
+            scale=alt.Scale(scheme="redblue", domainMid=0),
+            legend=alt.Legend(title="Latitude (° N)"),
         )
 
     chart = (
@@ -552,6 +570,7 @@ def _(alt, color_by, df_scored):
                 alt.Tooltip("region:N", title="Region"),
                 alt.Tooltip("business_activity:N", title="GaWC"),
                 alt.Tooltip("population:Q", title="Population", format=","),
+                alt.Tooltip("lat:Q", title="Latitude", format=".2f"),
                 alt.Tooltip("x:Q", title="business-hub score", format=".3f"),
                 alt.Tooltip("y:Q", title="tropical-warm score", format=".3f"),
             ],
@@ -566,7 +585,9 @@ def _(alt, color_by, df_scored):
         .configure_legend(labelFontSize=11, titleFontSize=12)
         .interactive()  # pan + zoom
     )
-    chart
+
+    # Stack the dropdown directly above the chart so it is always visible.
+    mo.vstack([color_by, chart])
     return
 
 
