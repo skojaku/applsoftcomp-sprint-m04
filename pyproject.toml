@@ -3,5 +3,8 @@ name = "contexteng"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "pandas>=2.3.3",
     "pymupdf",
+    "requests>=2.33.1",
 ]

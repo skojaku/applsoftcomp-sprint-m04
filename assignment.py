@@ -58,26 +58,13 @@ def _(mo):
 
     **Copy this cell into your own submission** — you will need the same
     model (or any other sentence transformer) to reproduce anything below.
-
-    /// tip | Why this model?
-
-    We use `all-mpnet-base-v2` (MPNet, 110 M params, 768 dim) rather than
-    the smaller `all-MiniLM-L6-v2` (22 M params, 384 dim). On this very
-    notebook the bigger model roughly **+25 % raises the correlation
-    between the megacity axis and the real GaWC global-city rating**
-    (Spearman ρ: +0.37 → +0.46), and removes some visible name-collision
-    artifacts (e.g. *Hamilton, Bermuda* no longer gets pulled cold by the
-    Canadian city of the same name). It is still fully CPU-runnable:
-    ~10 s to load, under a second to encode 266 cities.
-
-    ///
     """)
     return
 
 
 @app.cell
 def _(SentenceTransformer):
-    model = SentenceTransformer("all-mpnet-base-v2")
+    model = SentenceTransformer("all-mpnet-base-v2")  # all-MiniLM-L6-v2 if you want faster but noisier results
     model
     return (model,)
 
@@ -316,13 +303,13 @@ def _(pd):
     df = pd.read_csv(
         "data/cities.csv",
         dtype={
-            "city":              "string",
-            "country":           "string",
-            "region":            "category",
-            "lat":               "float64",
-            "lon":               "float64",
-            "population":        "Int64",   # nullable integer
-            "founded":           "string",  # mixed: "1624", "500s BCE", "6th c."
+            "city": "string",
+            "country": "string",
+            "region": "category",
+            "lat": "float64",
+            "lon": "float64",
+            "population": "Int64",  # nullable integer
+            "founded": "string",  # mixed: "1624", "500s BCE", "6th c."
             "business_activity": "string",
         },
     )
@@ -598,44 +585,6 @@ def _(mo):
     3. **What does the axis *not* capture?** Every axis is a linear
        projection. Some distinctions you care about may be orthogonal to
        both of your axes.
-
-    **Example observation for the plot above:**
-
-    > **Quadrants.** Guangzhou, Chicago, Beijing, Shenzhen, Tokyo, and
-    > Shanghai anchor the *megacity* pole. Tiny island capitals — Flying
-    > Fish Cove, West Island, The Valley, Road Town, Cockburn Town —
-    > anchor the *small-town* pole, and all five carry a "High Sufficiency"
-    > GaWC rating, a nice sanity check that the axis is tracking
-    > global-city-ness.
-    >
-    > **Climate anchors.** Oslo, Nuuk, Copenhagen, Longyearbyen (Svalbard,
-    > the dataset's northernmost city at 78°N), and Moscow hold up the
-    > cold side. São Tomé, São Paulo, Panama City, Managua, and Port Vila
-    > hold up the tropical side. Recoloring by **|latitude|** makes a
-    > second, non-semantic signal visible: the points line up by vertical
-    > position (light near the equator, dark far from it), confirming the
-    > climate axis really is tracking distance-to-equator.
-    >
-    > **Surprises.** Mbabane (Eswatini, mild subtropical highland) lands
-    > at #6 on the tropical side — noisier than its real-world climate
-    > would suggest. Small capitals with thin training-data footprints
-    > still pick up residual embedding noise, even after upgrading to a
-    > stronger model. Doha and Abu Dhabi sit in the *megacity + tropical*
-    > quadrant, consistent with how oil-era Gulf hubs are written about.
-    >
-    > **What the axes miss.** Coastal-vs-inland geography, political
-    > capital status, and age of the city. Rome (2,700 years old) and
-    > Washington, D.C. (a 200-year-old planned capital) both land on the
-    > megacity side with almost identical *x*-scores — just split by
-    > climate. The axes can see neither their age nor their political
-    > history.
-
-    ---
-
-    Now open the **`README.md`** and build your own notebook for one of the
-    three case studies (or your own dataset). Your submission is evaluated
-    on its pipeline, its git history, its documentation, and the clarity
-    of its final figure — not on matching this example.
     """)
     return
 

@@ -8,70 +8,80 @@ Usage:
 
 import csv
 from pathlib import Path
-from urllib.request import urlopen
 
-import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 
 # Wikipedia's S&P 500 list page (updated regularly)
 WIKI_URL = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
 
-# GICS sector name mapping (Wikipedia uses full GICS names)
-SECTOR_RENAME = {
-    "Information Technology": "Information Technology",
-    "Communication Services": "Communication Services",
-    "Consumer Discretionary": "Consumer Discretionary",
-    "Consumer Staples": "Consumer Staples",
-    "Health Care": "Health Care",
-    "Financials": "Financials",
-    "Industrials": "Industrials",
-    "Energy": "Energy",
-    "Utilities": "Utilities",
-    "Materials": "Materials",
-    "Real Estate": "Real Estate",
-}
-
 OUTPUT_PATH = Path(__file__).resolve().parent.parent / "data" / "sp500.csv"
 
 
-def fetch_sp500() -> pd.DataFrame:
+def fetch_sp500() -> list[dict]:
     """Read the S&P 500 constituents table from Wikipedia and return
-    a DataFrame with columns [name, sector]."""
-    tables = pd.read_html(WIKI_URL)
-    # The first table on the page is the current S&P 500 list
-    df = tables[0]
+    a list of dicts with keys [name, sector]."""
+    headers = {
+        "User-Agent": "sp500-fetcher/1.0 (educational project; Python/requests)",
+    }
+    resp = requests.get(WIKI_URL, headers=headers, timeout=30)
+    resp.raise_for_status()
 
-    # Column names vary slightly over time; find the right ones
-    name_col = next(c for c in df.columns if "security" in c.lower())
-    sector_col = next(c for c in df.columns if "gics" in c.lower() and "sector" in c.lower())
+    soup = BeautifulSoup(resp.text, "html.parser")
 
-    df = df[[name_col, sector_col]].copy()
-    df.columns = ["name", "sector"]
+    # The first <table> with class 'wikitable' is the S&P 500 list
+    table = soup.find("table", {"class": "wikitable"})
+    if table is None:
+        raise RuntimeError("Could not find S&P 500 table on Wikipedia page")
 
-    # Normalize sector names (strip whitespace, standardize)
-    df["sector"] = df["sector"].str.strip().map(
-        lambda s: SECTOR_RENAME.get(s, s)
+    rows = table.find_all("tr")
+
+    # Parse header to find the column indices we need
+    header = [th.get_text(strip=True) for th in rows[0].find_all(["th", "td"])]
+    name_idx = next(i for i, h in enumerate(header) if "security" in h.lower())
+    sector_idx = next(
+        i for i, h in enumerate(header) if "gics" in h.lower() and "sector" in h.lower()
     )
 
+    records = []
+    for row in rows[1:]:
+        cells = row.find_all(["td", "th"])
+        if len(cells) <= max(name_idx, sector_idx):
+            continue
+        name = cells[name_idx].get_text(strip=True)
+        sector = cells[sector_idx].get_text(strip=True)
+        # Skip footer / empty rows
+        if not name or not sector:
+            continue
+        records.append({"name": name, "sector": sector})
+
     # Sort by sector then name for readability
-    df = df.sort_values(["sector", "name"]).reset_index(drop=True)
-    return df
+    records.sort(key=lambda r: (r["sector"], r["name"]))
+    return records
 
 
 def main():
     print(f"Fetching S&P 500 list from {WIKI_URL} ...")
-    df = fetch_sp500()
-    print(f"Found {len(df)} companies across {df['sector'].nunique()} sectors")
+    records = fetch_sp500()
+    print(f"Found {len(records)} companies across {len({r['sector'] for r in records})} sectors")
 
     # Ensure output directory exists
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-    df.to_csv(OUTPUT_PATH, index=False)
+    with open(OUTPUT_PATH, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["name", "sector"])
+        writer.writeheader()
+        writer.writerows(records)
+
     print(f"Saved to {OUTPUT_PATH}")
 
     # Print a quick summary
+    from collections import Counter
+
+    counts = Counter(r["sector"] for r in records)
     print("\nCompanies per sector:")
-    for sector, count in df["sector"].value_counts().sort_index().items():
-        print(f"  {sector}: {count}")
+    for sector in sorted(counts):
+        print(f"  {sector}: {counts[sector]}")
 
 
 if __name__ == "__main__":

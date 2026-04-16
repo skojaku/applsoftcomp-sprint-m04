@@ -5,15 +5,13 @@ Build a **semantic map**: pick terms, design two semantic axes from opposing wor
 > [!IMPORTANT]
 > **Fork first.** Without forking, your Codespace opens on the original repo and you can't push. Fork → clone your fork → work on it.
 
-## Getting oriented
+## To get started 
 
-1. Read this README.
-2. Open `assignment.py` with `uvx marimo edit --sandbox assignment.py`. This is a **worked example** on the universities dataset — not the deliverable.
-3. Pick a case study, build your own pipeline.
+1. Go [Molab notebook](https://molab.marimo.io/notebooks/nb_9zEp2dqxRbXDrrbQcieFDK). Or clone and open `assignment.py` with `uvx marimo edit --sandbox assignment.py`. This is a **worked example** on the universities dataset — not the deliverable.
+2. Pick a case study, build your own pipeline.
 
-## Pick a case study
 
-One of the three, or bring your own.
+You can choose one of the three datasets, or bring your own.
 
 | File | Case study | N | Extra columns |
 |---|---|---|---|
@@ -21,7 +19,7 @@ One of the three, or bring your own.
 | `data/sp500.csv` | S&P 500 (sample) | 203 | `sector` |
 | `data/chemicals.csv` | Chemicals / materials | 179 | `class` |
 
-**Own data:** ≥ 100 terms, ≥ 1 categorical attribute for color/shape.
+If you bring your own, document the source and curation process. Requirements: ≥ 100 terms, ≥ 1 categorical attribute for color/shape.
 
 ## Tasks
 
@@ -37,19 +35,16 @@ Axes should capture different, ideally orthogonal aspects — redundant axes was
 
 ### 2. One scatterplot
 
-Plot each term at `(axis1, axis2)`. Encode categorical attributes with **color** and **shape**. Follow data-viz principles:
+Plot each term at `(axis1, axis2)`. Encode categorical/ordinal attributes with **color** and **shape**. Follow data-viz principles:
 
-- **Clarity:** readable symbols/text, no overlapping labels, no default matplotlib-blue soup.
-- **Group separability:** groups distinguishable at a glance.
-- **Colorblind-friendly:** Okabe–Ito, viridis, etc. Redundantly encode with shape.
+- **Clarity:** readable symbols/text and no overlapping labels. Redundantly encode with shape
+- **Colorblind-friendly:** No green and red colors in the same plot.
 - **Pre-attentive attention:** use color/size/position to pull the eye to your story.
 - **Gestalt:** proximity, similarity; zero lines, quadrant annotations, text anchors help.
 
-`assignment.py`'s plot is a floor, not a ceiling.
-
 ### 3. Observations
 
-2–4 paragraphs in notebook or `REPORT.md`:
+2–4 paragraphs in notebook or `NOTE.md` placed at the repository root:
 
 - What separates along each axis?
 - Most **surprising** point/group — what does it say about the embedding?
@@ -60,27 +55,27 @@ Plot each term at `(axis1, axis2)`. Encode categorical attributes with **color**
 Your repo must have:
 
 - **Code** for the figure (marimo / Jupyter / `.py`).
-- **Reproducible pipeline** — `run.sh` / Makefile / Snakemake that regenerates the figure from scratch. One command, fresh clone. Starter `run.sh` included.
+- **Reproducible pipeline** — `run.sh` / Makefile / Snakemake that regenerates the figure from scratch.
 - **Raw data** (CSV in `data/`).
-- **Final figure** (PNG/PDF).
-- **Observations** inline or in `REPORT.md`.
+- **Final figure** (PNG/PDF in `figs/` folder).
+- **Observations** inline or in `NOTE.md` in the project root.
 
-Submit by pushing and posting the URL to Brightspace.
+Submit by pushing to github and posting the URL to Brightspace.
 
 ## Evaluation
 
 | Criterion | What we look for |
 |---|---|
 | **Atomic git history** | Small focused commits, meaningful messages. Not `final`, `final2`, `final-real`. |
-| **Reproducible pipeline** | `bash run.sh` regenerates data + figure on a fresh clone. No manual steps. |
-| **Documentation** | Comments where non-obvious. Notebook/report explains *why* each axis and *what* the figure shows. |
-| **Viz quality** | Follows Task 2 principles. Clear, separated, colorblind-friendly, deliberate. |
+| **Reproducible pipeline** | `bash run.sh` regenerates data + figure on a fresh clone (or Snakefile or Makefile). No manual steps. |
+| **Documentation** | Explains *why* each axis and *what* the figure shows. |
+| **Viz quality** | Clear, separated, colorblind-friendly, deliberate. |
 | **Task completion** | Two axes, one scatterplot, observations — all present. |
 
 ## FAQ
 
 **Teams?** Yes. Team repo, list members in `REPORT.md`, all submit same URL.
 
-**Embedding model?** `all-MiniLM-L6-v2` default. Larger OK, document the swap.
+**Embedding model?** You can use any models. Smaller is ideal in light of reproducibility. Larger OK, document the model used.
 
-**Unimodal/boring axis?** That's information. Try named entities over abstractions, or poles that *should* separate your data. Iterate.
+**I could not find meaningful patterns. Get Unimodal/boring axis** That's information. Try named entities over abstractions, or poles that *should* separate your data. 
