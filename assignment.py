@@ -10,6 +10,7 @@
 #     "ipython>=8.0",
 #     "drawdata==0.5.0",
 #     "anywidget>=0.9",
+#     "seaborn==0.13.2",
 # ]
 # ///
 
@@ -172,7 +173,7 @@ def _(mo):
 
 @app.cell
 def _(ScatterWidget, mo):
-    widget = mo.ui.anywidget(ScatterWidget(width=520, height=380))
+    widget = mo.ui.anywidget(ScatterWidget(width=820, height=580))
     widget
     return (widget,)
 
@@ -218,13 +219,16 @@ def plot_semaxis_2d(df):
     the same axis.
 
     Left panel: points + bold arrows from the origin to each pole
-    centroid, plus the thick SemAxis arrow (e_+ − e_−).
-    Right panel: per-class 1-D projection scores rendered as a violin
-    (kernel-density envelope) with jittered dots.
+    centroid, plus the thick SemAxis arrow (e_+ - e_-).
+    Right panel: per-class 1-D projection scores as a seaborn violin
+    with an overlaid strip.
     """
     import numpy as np
+    import pandas as pd
     import matplotlib.pyplot as plt
-    from scipy.stats import gaussian_kde
+    import seaborn as sns
+
+    sns.set_theme(style="white", context="talk", font_scale=0.85)
 
     fig, (ax1, ax2) = plt.subplots(
         1, 2, figsize=(12, 5), gridspec_kw={"width_ratios": [2, 1]}
@@ -260,7 +264,7 @@ def plot_semaxis_2d(df):
             a.text(
                 0.5,
                 0.5,
-                "Pole centroids coincide — move the two pole clusters apart.",
+                "Pole centroids coincide - move the two pole clusters apart.",
                 ha="center",
                 va="center",
                 transform=a.transAxes,
@@ -270,76 +274,79 @@ def plot_semaxis_2d(df):
         return fig
     axis_unit = v / v_len
 
-    # Projections are measured from the ORIGIN (like the real SemAxis algorithm).
+    # Projections measured from the ORIGIN (matches the real SemAxis algorithm).
     t = pts @ axis_unit
 
     # ---- Left: 2-D scene ----
-    # Plot raw points first (all classes, including test ones).
-    for c in colors:
-        sub = df[df["color"] == c]
-        ax1.scatter(
-            sub["x"],
-            sub["y"],
-            c=c,
-            s=55,
-            edgecolor="white",
-            linewidth=0.6,
-            alpha=0.85,
-            zorder=2,
-        )
+    class_labels = [f"class {i + 1}" for i in range(len(colors))]
+    df_plot = df.copy()
+    df_plot["class"] = df_plot["color"].map(dict(zip(colors, class_labels)))
+    palette = dict(zip(class_labels, colors))
 
-    # Bold vectors from origin to each pole centroid — emphasises that
-    # embeddings are VECTORS, and that the SemAxis is the *difference* of
-    # two such vectors.
+    sns.scatterplot(
+        data=df_plot,
+        x="x",
+        y="y",
+        hue="class",
+        palette=palette,
+        s=70,
+        edgecolor="white",
+        linewidth=0.7,
+        alpha=0.9,
+        ax=ax1,
+        legend=False,
+        zorder=2,
+    )
+
+    # Thin guide lines from origin to each pole centroid.
     for center, c_rgb, lbl in [
-        (neg_c, neg_color, "e₋ (− pole centroid)"),
-        (pos_c, pos_color, "e₊ (+ pole centroid)"),
+        (neg_c, neg_color, r"$e_{-}$ (- pole centroid)"),
+        (pos_c, pos_color, r"$e_{+}$ (+ pole centroid)"),
     ]:
         ax1.annotate(
             "",
             xy=center,
             xytext=(0, 0),
             arrowprops=dict(
-                arrowstyle="-|>",
+                arrowstyle="-",
                 color=c_rgb,
-                lw=3,
-                mutation_scale=22,
+                lw=1,
+                alpha=0.6,
                 shrinkA=0,
                 shrinkB=0,
             ),
             zorder=3,
         )
-        ax1.plot([], [], color=c_rgb, lw=3, label=lbl)
+        ax1.plot([], [], color=c_rgb, lw=1, alpha=0.6, label=lbl)
 
-    # Thick SemAxis arrow: e_+ − e_−, drawn from neg centroid to pos centroid.
+    # SemAxis arrow: e_+ - e_-.
     ax1.annotate(
         "",
         xy=pos_c,
         xytext=neg_c,
         arrowprops=dict(
             arrowstyle="-|>",
-            color="#111",
-            lw=5,
-            mutation_scale=30,
+            color="#222",
+            lw=2.5,
+            mutation_scale=20,
             shrinkA=0,
             shrinkB=0,
         ),
         zorder=4,
     )
-    ax1.plot([], [], color="#111", lw=5, label="SemAxis: e₊ − e₋")
+    ax1.plot([], [], color="#222", lw=2.5, label=r"SemAxis: $e_{+} - e_{-}$")
 
-    # Mark the origin.
-    ax1.scatter([0], [0], s=60, marker="x", color="#111", linewidths=2, zorder=5)
+    # Origin marker.
+    ax1.scatter([0], [0], s=55, marker="x", color="#222", linewidths=2, zorder=5)
     ax1.annotate(
         "origin",
         xy=(0, 0),
-        xytext=(6, -10),
+        xytext=(6, -12),
         textcoords="offset points",
-        fontsize=8,
-        color="#444",
+        fontsize=9,
+        color="#555",
     )
 
-    # Make sure the origin is visible in the viewport.
     pad_x = max(30.0, 0.1 * (pts[:, 0].max() - pts[:, 0].min()))
     pad_y = max(30.0, 0.1 * (pts[:, 1].max() - pts[:, 1].min()))
     ax1.set_xlim(min(0.0, pts[:, 0].min()) - pad_x, max(0.0, pts[:, 0].max()) + pad_x)
@@ -347,64 +354,60 @@ def plot_semaxis_2d(df):
     ax1.set_aspect("equal", adjustable="box")
     ax1.set_xlabel("x")
     ax1.set_ylabel("y")
-    ax1.set_title("Pole centroids are vectors; the SemAxis is their difference")
-    ax1.legend(loc="best", fontsize=8, frameon=False)
+    ax1.set_title("Pole centroids are vectors; the SemAxis is their difference", pad=12)
+    ax1.legend(loc="best", fontsize=9, frameon=False)
+    sns.despine(ax=ax1)
 
-    # ---- Right: 1-D projected scores, per class, as violin + jitter ----
-    rng = np.random.default_rng(0)
-    x_grid = np.linspace(t.min() - 0.5 * t.std(), t.max() + 0.5 * t.std(), 200)
+    # ---- Right: 1-D projected scores per class ----
+    proj_df = pd.DataFrame(
+        {
+            "projection": t,
+            "class": pd.Categorical(
+                [class_labels[colors.index(c)] for c in color_arr],
+                categories=class_labels,
+                ordered=True,
+            ),
+        }
+    )
 
-    for i, c in enumerate(colors):
-        mask = color_arr == c
-        ts = t[mask]
-        if ts.size == 0:
-            continue
+    sns.stripplot(
+        data=proj_df,
+        x="projection",
+        y="class",
+        hue="class",
+        palette=palette,
+        size=5,
+        jitter=0.2,
+        alpha=0.8,
+        edgecolor="white",
+        linewidth=0.5,
+        ax=ax2,
+        legend=False,
+    )
 
-        # KDE violin (only when we have enough points and variance).
-        if ts.size >= 2 and ts.std() > 1e-6:
-            try:
-                kde = gaussian_kde(ts)
-                density = kde(x_grid)
-                if density.max() > 0:
-                    width = 0.4 * density / density.max()
-                    ax2.fill_between(
-                        x_grid,
-                        i - width,
-                        i + width,
-                        color=c,
-                        alpha=0.25,
-                        linewidth=0,
-                    )
-                    ax2.plot(x_grid, i + width, color=c, lw=1)
-                    ax2.plot(x_grid, i - width, color=c, lw=1)
-            except Exception:
-                pass
+    # Per-class mean as a short vertical tick.
+    means = proj_df.groupby("class", observed=True)["projection"].mean()
+    for i, lbl in enumerate(class_labels):
+        if lbl in means.index:
+            ax2.plot(
+                [means[lbl], means[lbl]],
+                [i - 0.28, i + 0.28],
+                color="#222",
+                lw=1.5,
+                zorder=5,
+            )
 
-        # Jittered strip.
-        jitter = rng.uniform(-0.15, 0.15, size=ts.size)
-        ax2.scatter(
-            ts,
-            np.full_like(ts, i) + jitter,
-            c=c,
-            s=40,
-            edgecolor="white",
-            linewidth=0.5,
-            zorder=3,
-        )
-
-    ax2.set_yticks(range(len(colors)))
-    ax2.set_yticklabels([f"class {i + 1}" for i in range(len(colors))], fontsize=9)
-    ax2.set_xlabel("projection onto SemAxis  →")
-    ax2.set_title("1-D projected scores per class")
-    ax2.set_ylim(-0.7, len(colors) - 0.3)
-    for side in ("top", "right"):
-        ax2.spines[side].set_visible(False)
+    ax2.set_xlabel(r"projection onto SemAxis $\rightarrow$")
+    ax2.set_ylabel("")
+    ax2.set_title("1-D projected scores per class", pad=12)
+    sns.despine(ax=ax2, left=True)
+    ax2.tick_params(axis="y", length=0)
 
     fig.tight_layout()
     return fig
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(pd, widget):
     # Read the drawn data reactively. Fall back to the preset when empty.
     _ = widget.value  # noqa: register widget as reactivity dependency
@@ -467,19 +470,83 @@ def center_scores(scores, pos_words, neg_words, axis, embedding_model):
 def _(mo):
     mo.md(r"""
     ---
-    ## Part 3 — Worked Example: U.S. Universities
+    ## Part 3 — Worked Example: World Cities
 
-    We load the `data/universities.csv` case study and walk through the full
-    pipeline end-to-end. Study this example, then build your own in a
-    separate notebook using whichever dataset you choose.
+    A small list of ~50 cities — mostly major capitals and hubs, plus a
+    handful of smaller but famously-distinctive ones (Kyoto, Venice,
+    Marrakech, Reykjavik, Havana, Kathmandu). Each city has a **region**
+    attribute (continent) that we will use as the color encoding.
+
+    Study this example, then build your own submission using whichever
+    case-study dataset (or your own data) you choose.
     """)
     return
 
 
 @app.cell
 def _(pd):
-    df = pd.read_csv("data/universities.csv")
-    print(f"{len(df)} universities across {df['type'].nunique()} types and {df['region'].nunique()} regions.")
+    df = pd.DataFrame(
+        [
+            # North America (9)
+            ("New York",       "North America"),
+            ("Los Angeles",    "North America"),
+            ("San Francisco",  "North America"),
+            ("Chicago",        "North America"),
+            ("Boston",         "North America"),
+            ("Toronto",        "North America"),
+            ("Vancouver",      "North America"),
+            ("Mexico City",    "North America"),
+            ("Miami",          "North America"),
+            # Europe (14)
+            ("London",         "Europe"),
+            ("Paris",          "Europe"),
+            ("Berlin",         "Europe"),
+            ("Rome",           "Europe"),
+            ("Amsterdam",      "Europe"),
+            ("Madrid",         "Europe"),
+            ("Vienna",         "Europe"),
+            ("Stockholm",      "Europe"),
+            ("Zurich",         "Europe"),
+            ("Lisbon",         "Europe"),
+            ("Prague",         "Europe"),
+            ("Athens",         "Europe"),
+            ("Venice",         "Europe"),
+            ("Reykjavik",      "Europe"),
+            # Asia (12)
+            ("Tokyo",          "Asia"),
+            ("Kyoto",          "Asia"),
+            ("Seoul",          "Asia"),
+            ("Beijing",        "Asia"),
+            ("Shanghai",       "Asia"),
+            ("Hong Kong",      "Asia"),
+            ("Singapore",      "Asia"),
+            ("Bangkok",        "Asia"),
+            ("Mumbai",         "Asia"),
+            ("Delhi",          "Asia"),
+            ("Taipei",         "Asia"),
+            ("Kathmandu",      "Asia"),
+            # Middle East & Africa (7)
+            ("Dubai",          "Middle East & Africa"),
+            ("Istanbul",       "Middle East & Africa"),
+            ("Tel Aviv",       "Middle East & Africa"),
+            ("Cairo",          "Middle East & Africa"),
+            ("Marrakech",      "Middle East & Africa"),
+            ("Cape Town",      "Middle East & Africa"),
+            ("Nairobi",        "Middle East & Africa"),
+            # South America (5)
+            ("São Paulo",      "South America"),
+            ("Rio de Janeiro", "South America"),
+            ("Buenos Aires",   "South America"),
+            ("Lima",           "South America"),
+            ("Havana",         "South America"),
+            # Oceania (3)
+            ("Sydney",         "Oceania"),
+            ("Melbourne",      "Oceania"),
+            ("Auckland",       "Oceania"),
+        ],
+        columns=["name", "region"],
+    )
+    print(f"{len(df)} cities across {df['region'].nunique()} regions.")
     df.head()
     return (df,)
 
@@ -495,34 +562,51 @@ def _(mo):
       embedding space (pole distance ≥ 0.3).
     - **Discriminative**: when projected onto your dataset it should spread
       the points out, not pile them in the middle.
+    - **Orthogonal to the other axis**: the two axes should capture
+      different aspects of the data.
 
-    Tips:
+    Our two axes for cities:
 
-    - Use several words per pole (3–6). Single words are noisy.
-    - Institution *names* often work better than abstract concepts, because
-      the model has rich context for named entities.
-    - If your first axis fails, iterate on the pole words.
+    - **Horizontal** — *historic/heritage* (−) ↔ *finance/business hub* (+)
+    - **Vertical** — *cold/northern climate* (−) ↔ *tropical/warm climate* (+)
+
+    These are conceptually independent: Singapore is both tropical *and* a
+    finance hub; Reykjavik is cold and not a finance hub; Venice is warm-ish
+    but heritage-heavy, not financial.
     """)
     return
 
 
 @app.cell
 def _(df, model):
-    # Axis 1 — research intensity vs teaching focus
-    axis1_pos = ["research university", "PhD program", "laboratory", "publications", "grant funding", "doctoral"]
-    axis1_neg = ["teaching college", "undergraduate focus", "mentoring", "small classes", "community access"]
+    # Axis 1 — historical/heritage vs modern financial hub
+    axis1_pos = [
+        "global financial hub", "international banking center",
+        "corporate headquarters", "stock exchange",
+        "skyscrapers", "business district",
+    ]
+    axis1_neg = [
+        "ancient city", "historic old town", "UNESCO world heritage site",
+        "medieval architecture", "ruins and monuments", "cultural heritage",
+    ]
 
-    # Axis 2 — religious affiliation vs secular
-    axis2_pos = ["Catholic", "Christian", "religious affiliation", "faith-based", "seminary"]
-    axis2_neg = ["secular", "public research", "state university", "non-religious"]
+    # Axis 2 — cold/northern climate vs tropical/warm climate
+    axis2_pos = [
+        "tropical climate", "hot and humid", "palm trees",
+        "equatorial weather", "warm beaches",
+    ]
+    axis2_neg = [
+        "arctic climate", "cold snowy winters", "northern latitude",
+        "Nordic weather", "sub-zero temperatures",
+    ]
 
-    ax1 = make_axis(axis1_pos, axis1_neg, model)
-    ax2 = make_axis(axis2_pos, axis2_neg, model)
+    axis_business = make_axis(axis1_pos, axis1_neg, model)
+    axis_climate = make_axis(axis2_pos, axis2_neg, model)
 
-    raw_x = score_words(df["name"].tolist(), ax1, model)
-    raw_y = score_words(df["name"].tolist(), ax2, model)
-    x = center_scores(raw_x, axis1_pos, axis1_neg, ax1, model)
-    y = center_scores(raw_y, axis2_pos, axis2_neg, ax2, model)
+    raw_x = score_words(df["name"].tolist(), axis_business, model)
+    raw_y = score_words(df["name"].tolist(), axis_climate, model)
+    x = center_scores(raw_x, axis1_pos, axis1_neg, axis_business, model)
+    y = center_scores(raw_y, axis2_pos, axis2_neg, axis_climate, model)
 
     df_scored = df.assign(x=x, y=y)
     df_scored.head()
@@ -534,101 +618,72 @@ def _(mo):
     mo.md(r"""
     ### Step 2 — Visualize
 
-    The scatterplot below follows a few data-viz principles you should
-    apply in your own submission:
+    A few data-viz principles you should also apply in your own submission:
 
-    - **Colorblind-safe palette** (Okabe–Ito). Do not use raw matplotlib
-      defaults for categorical color.
-    - **Distinct marker shapes** redundantly encode region, so the plot
-      is still readable in grayscale or for viewers who confuse colors.
+    - **Colorblind-safe palette** (Okabe–Ito) for the region encoding.
     - **Axis labels are the pole words**, not `x` / `y`. The reader should
       be able to interpret the plot without reading extra text.
     - **Zero lines** draw the eye to the midpoint — Gestalt "common fate"
       groups points on the same side of each axis.
-    - **Annotations** on a few extreme points guide pre-attentive attention
-      to the story you want the reader to see first.
+    - **Text labels** on every point (cities are few enough), offset to
+      avoid overlaps. For larger datasets, annotate only the extremes.
     """)
     return
 
 
 @app.cell
 def _(df_scored, plt):
-    OKABE_ITO = {
-        "Ivy": "#E69F00",
-        "Elite Private": "#D55E00",
-        "Tech": "#0072B2",
-        "Public Flagship": "#009E73",
-        "Public Regional": "#56B4E9",
-        "Liberal Arts": "#CC79A7",
-        "HBCU": "#F0E442",
-        "Religious": "#999999",
-        "Womens": "#AA4499",
-        "Service Academy": "#332288",
-        "For-Profit": "#882255",
-        "Community College": "#117733",
-        "Tribal": "#44AA99",
-        "Specialized Arts": "#6699CC",
-    }
-    REGION_MARKERS = {
-        "Northeast": "o",
-        "South": "s",
-        "Midwest": "^",
-        "West": "D",
+    # Okabe–Ito palette, one color per region.
+    REGION_COLORS = {
+        "North America":        "#0072B2",
+        "Europe":               "#E69F00",
+        "Asia":                 "#D55E00",
+        "Middle East & Africa": "#009E73",
+        "South America":        "#CC79A7",
+        "Oceania":              "#56B4E9",
     }
 
     fig, ax = plt.subplots(figsize=(11, 8))
 
-    for region, marker in REGION_MARKERS.items():
-        for utype, color in OKABE_ITO.items():
-            sub = df_scored[(df_scored["region"] == region) & (df_scored["type"] == utype)]
-            if len(sub) == 0:
-                continue
-            ax.scatter(sub["x"], sub["y"], c=color, marker=marker, s=70, edgecolor="white", linewidth=0.6, alpha=0.9)
+    for region, color in REGION_COLORS.items():
+        sub = df_scored[df_scored["region"] == region]
+        if len(sub) == 0:
+            continue
+        ax.scatter(
+            sub["x"], sub["y"],
+            c=color, s=90, edgecolor="white", linewidth=0.8,
+            alpha=0.9, label=region, zorder=3,
+        )
 
-    ax.axhline(0, color="#444", linewidth=0.8, zorder=0)
-    ax.axvline(0, color="#444", linewidth=0.8, zorder=0)
-    ax.set_xlabel("← teaching-focused          research-intensive →", fontsize=11)
-    ax.set_ylabel("← secular                  religious →", fontsize=11)
-    ax.set_title("U.S. universities in a 2D semantic space", fontsize=13, pad=12)
+    # Zero lines define the four quadrants.
+    ax.axhline(0, color="#888", linewidth=0.8, zorder=1)
+    ax.axvline(0, color="#888", linewidth=0.8, zorder=1)
 
-    # Annotate a few extremes to guide the reader
-    for _, row in df_scored.nlargest(3, "x").iterrows():
-        ax.annotate(row["name"], (row["x"], row["y"]), fontsize=8, xytext=(4, 2), textcoords="offset points")
-    for _, row in df_scored.nsmallest(3, "x").iterrows():
-        ax.annotate(row["name"], (row["x"], row["y"]), fontsize=8, xytext=(4, 2), textcoords="offset points")
-    for _, row in df_scored.nlargest(2, "y").iterrows():
-        ax.annotate(row["name"], (row["x"], row["y"]), fontsize=8, xytext=(4, 2), textcoords="offset points")
+    # City labels — small, offset so they don't cover the dot.
+    for _, row in df_scored.iterrows():
+        ax.annotate(
+            row["name"],
+            (row["x"], row["y"]),
+            fontsize=7.5, xytext=(5, 3),
+            textcoords="offset points",
+            color="#222",
+        )
 
-    # Two legends: color = type, shape = region
-    from matplotlib.lines import Line2D
+    ax.set_xlabel("← historic / heritage          finance / business hub →", fontsize=11)
+    ax.set_ylabel("← cold / northern          tropical / warm →", fontsize=11)
+    ax.set_title("World cities in a 2D semantic space", fontsize=13, pad=12)
 
-    type_handles = [
-        Line2D([], [], marker="o", linestyle="", markerfacecolor=c, markeredgecolor="white", markersize=8, label=t)
-        for t, c in OKABE_ITO.items()
-    ]
-    region_handles = [
-        Line2D([], [], marker=m, linestyle="", markerfacecolor="#777", markeredgecolor="white", markersize=8, label=r)
-        for r, m in REGION_MARKERS.items()
-    ]
-    leg1 = ax.legend(
-        handles=type_handles,
-        title="Type",
-        loc="upper left",
-        bbox_to_anchor=(1.02, 1.0),
-        fontsize=8,
-        title_fontsize=9,
-        frameon=False,
-    )
-    ax.add_artist(leg1)
     ax.legend(
-        handles=region_handles,
         title="Region",
         loc="upper left",
-        bbox_to_anchor=(1.02, 0.45),
-        fontsize=8,
-        title_fontsize=9,
+        bbox_to_anchor=(1.02, 1.0),
+        fontsize=9,
+        title_fontsize=10,
         frameon=False,
     )
+
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
 
     plt.tight_layout()
     fig
@@ -653,15 +708,20 @@ def _(mo):
 
     **Example observation for the plot above:**
 
-    > HBCUs and religious institutions separate cleanly along the vertical
-    > axis, while the horizontal axis spreads flagship research universities
-    > away from community colleges and regional publics. Service academies
-    > cluster near the secular–teaching quadrant, which is consistent with
-    > their undergraduate-heavy mission. An unexpected finding: several
-    > Ivies score slightly on the "religious" side of axis 2, likely a
-    > residue of their historical denominational origins still present in
-    > online text. The axes do not separate STEM-heavy from humanities-heavy
-    > institutions — that distinction would require a third axis.
+    > The two axes partition the cities into four interpretable quadrants.
+    > New York, Hong Kong, Singapore, London, and Zurich sit firmly in the
+    > "finance hub" region; Kyoto, Venice, Athens, Marrakech, and Prague
+    > anchor the "heritage" side. The climate axis pulls Reykjavik,
+    > Stockholm, and Toronto north-cold, while Bangkok, Mumbai, Havana, and
+    > Singapore go tropical-warm. Notable surprises: Dubai lands in the
+    > "tropical + finance" quadrant — unusual for that combination, but
+    > consistent with how the city is portrayed online. Venice and
+    > Reykjavik occupy nearly-opposite corners despite both being small
+    > European cities, which shows that the region label (color) and the
+    > two axes carry genuinely different information. A third axis could
+    > usefully encode *coastal vs inland* geography — Denver-type or
+    > Kathmandu-type cities are currently indistinguishable from coastal
+    > peers with similar economic / climate profiles.
 
     ---
 
