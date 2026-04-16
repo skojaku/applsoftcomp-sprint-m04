@@ -1,125 +1,86 @@
 # Sprint M05 — Semantic Axes
 
-Build a **semantic map** of a domain you find interesting. You will pick a
-list of terms, design two semantic axes from opposing word sets, and
-produce one publication-quality 2D scatterplot that tells a story about
-the terms.
+Build a **semantic map**: pick terms, design two semantic axes from opposing word sets, produce one publication-quality 2D scatterplot.
 
 > [!IMPORTANT]
-> **Fork this repo first.** If you skip this step, your Codespace will open
-> on the original repo and you will have no way to save or push your work.
-> Fork (top-right) → clone your fork → do all work on your fork.
+> **Fork first.** Without forking, your Codespace opens on the original repo and you can't push. Fork → clone your fork → work on it.
 
 ## Getting oriented
 
-1. Read this README end-to-end.
-2. Open `assignment.py` with `uvx marimo edit --sandbox assignment.py`.
-   This is a **worked example** — not the deliverable. It walks through
-   the full pipeline on the U.S. universities dataset so you can see what
-   "done" looks like.
-3. Pick a case study (see below), then build your own pipeline from
-   scratch in a new notebook / script.
+1. Read this README.
+2. Open `assignment.py` with `uvx marimo edit --sandbox assignment.py`. This is a **worked example** on the universities dataset — not the deliverable.
+3. Pick a case study, build your own pipeline.
 
 ## Pick a case study
 
-Choose **one** of the three provided datasets, or bring your own.
+One of the three, or bring your own.
 
 | File | Case study | N | Extra columns |
 |---|---|---|---|
-| `data/universities.csv` | U.S. higher-education institutions | 157 | `type`, `region` |
-| `data/sp500.csv` | S&P 500 (sample) companies | 203 | `sector` |
-| `data/chemicals.csv` | Chemical compounds and materials | 179 | `class` |
+| `data/universities.csv` | U.S. higher-ed institutions | 157 | `type`, `region` |
+| `data/sp500.csv` | S&P 500 (sample) | 203 | `sector` |
+| `data/chemicals.csv` | Chemicals / materials | 179 | `class` |
 
-**Bring your own?** Fine — with two constraints:
+**Own data:** ≥ 100 terms, ≥ 1 categorical attribute for color/shape.
 
-- **≥ 100 terms.** Below that, the scatterplot gets too sparse to tell a
-  useful story.
-- **At least one categorical attribute per term** that you can encode as
-  color or shape in the scatterplot.
+## Tasks
 
-## Your tasks
+### 1. Two semantic axes
 
-### 1. Design two semantic axes
+Each axis: 3–6 words for **+ pole**, 3–6 for **− pole**. Good axis:
 
-For each axis, choose 3–6 words for the **+ pole** and 3–6 words for the
-**− pole**. A good axis:
+- Well-separated poles (cosine distance between centroids ≥ 0.3).
+- Spreads the data, not piled at midpoint.
+- One-sentence interpretation.
 
-- Has well-separated poles (cosine distance between pole centroids ≥ 0.3).
-- Spreads your dataset out rather than piling points near the midpoint.
-- Has an interpretation you can state in one sentence.
+Axes should capture different, ideally orthogonal aspects — redundant axes waste half the plot.
 
-The two axes should capture **different, ideally orthogonal** aspects of
-your data. Two axes that measure almost the same thing waste half the
-plot.
+### 2. One scatterplot
 
-### 2. Produce one scatterplot
+Plot each term at `(axis1, axis2)`. Encode categorical attributes with **color** and **shape**. Follow data-viz principles:
 
-Plot every term at `(axis1_score, axis2_score)`. Use **color** and
-**marker shape** to encode categorical attributes of the terms (e.g.,
-sector, type, region, class). Good scatterplots follow the data-viz
-principles you've already learned:
+- **Clarity:** readable symbols/text, no overlapping labels, no default matplotlib-blue soup.
+- **Group separability:** groups distinguishable at a glance.
+- **Colorblind-friendly:** Okabe–Ito, viridis, etc. Redundantly encode with shape.
+- **Pre-attentive attention:** use color/size/position to pull the eye to your story.
+- **Gestalt:** proximity, similarity; zero lines, quadrant annotations, text anchors help.
 
-- **Clarity.** All symbols, lines, and text are easily readable. No
-  overlapping labels. No default matplotlib-blue soup.
-- **Group separability.** Different groups are visually distinct — you
-  (and your reader) can tell them apart at a glance.
-- **Colorblind-friendly.** Use a palette that survives red-green
-  colorblindness (Okabe–Ito, viridis, or similar). Redundantly encode
-  groups with shape when possible.
-- **Pre-attentive attention.** Color, size, position — use these
-  deliberately to pull the reader's eye to the story *you* want them
-  to see first.
-- **Gestalt.** Proximity, similarity, common fate — let the plot's
-  groupings do work for you. Zero lines, quadrant annotations, and
-  well-placed text anchors all help.
+`assignment.py`'s plot is a floor, not a ceiling.
 
-The scatterplot in `assignment.py` is a starting point, not a ceiling.
+### 3. Observations
 
-### 3. Document your observations
+2–4 paragraphs in notebook or `REPORT.md`:
 
-Write a short analysis (2–4 paragraphs) in your notebook or in a
-`REPORT.md` that answers:
-
-- What clusters or patterns separate along each axis?
-- What is the most **surprising** point or group, and what does it
-  tell you about how the embedding model represents your domain?
-- What would a **third axis** need to capture? I.e., what variation is
-  your 2D projection hiding?
+- What separates along each axis?
+- Most **surprising** point/group — what does it say about the embedding?
+- What would a **third axis** capture?
 
 ## Deliverable
 
-You have freedom in format. At a minimum, your repo must contain:
+Your repo must have:
 
-- The **code** that produces your figure (marimo, Jupyter, or plain `.py`).
-- A **reproducible pipeline** — a `run.sh` (or `Makefile` / Snakemake
-  workflow) that regenerates the final figure from scratch. Someone
-  should be able to clone your fork and run one command to reproduce
-  your output. A starter `run.sh` is included; edit or replace it.
-- The **raw data file** you used (CSV in `data/`).
-- The **final figure** saved to disk (PNG or PDF).
-- **Observations** either inline in the notebook or in `REPORT.md`.
+- **Code** for the figure (marimo / Jupyter / `.py`).
+- **Reproducible pipeline** — `run.sh` / Makefile / Snakemake that regenerates the figure from scratch. One command, fresh clone. Starter `run.sh` included.
+- **Raw data** (CSV in `data/`).
+- **Final figure** (PNG/PDF).
+- **Observations** inline or in `REPORT.md`.
 
-Submit by pushing to your fork and posting the URL to Brightspace.
+Submit by pushing and posting the URL to Brightspace.
 
-## Evaluation criteria
+## Evaluation
 
 | Criterion | What we look for |
 |---|---|
-| **Atomic git history** | Small, focused commits with meaningful messages. One commit = one logical change. Not `final`, `final2`, `final-real`. |
-| **Reproducible pipeline** | `bash run.sh` (or equivalent) regenerates data and figure from scratch on a fresh clone. No manual steps, no orphaned outputs. |
-| **Comprehensive documentation** | Code is commented where non-obvious. The notebook / report explains *why* each axis was chosen and *what the figure shows*. A new reader can follow your reasoning. |
-| **Visualization quality** | Follows the data-viz principles in Task 2. Symbols and lines are clearly visible. Groups are clearly separated. Colorblind-friendly. Pre-attentive cues and Gestalt grouping are used deliberately. |
-| **Task completion** | Two plausible axes, one scatterplot, written observations — all present. |
+| **Atomic git history** | Small focused commits, meaningful messages. Not `final`, `final2`, `final-real`. |
+| **Reproducible pipeline** | `bash run.sh` regenerates data + figure on a fresh clone. No manual steps. |
+| **Documentation** | Comments where non-obvious. Notebook/report explains *why* each axis and *what* the figure shows. |
+| **Viz quality** | Follows Task 2 principles. Clear, separated, colorblind-friendly, deliberate. |
+| **Task completion** | Two axes, one scatterplot, observations — all present. |
 
 ## FAQ
 
-**Can I work in a team?** Yes. Make a team repo and list members in
-`REPORT.md`. Everyone submits the same URL.
+**Teams?** Yes. Team repo, list members in `REPORT.md`, all submit same URL.
 
-**What embedding model should I use?** `all-MiniLM-L6-v2` (what the intro
-notebook uses) is the default. You may swap in a larger model if you want,
-but document the choice.
+**Embedding model?** `all-MiniLM-L6-v2` default. Larger OK, document the swap.
 
-**My axis distribution is unimodal and boring.** That's information. Try
-different pole words — use named entities instead of abstract concepts,
-or pick poles that you think should actually separate the data. Iterate.
+**Unimodal/boring axis?** That's information. Try named entities over abstractions, or poles that *should* separate your data. Iterate.
